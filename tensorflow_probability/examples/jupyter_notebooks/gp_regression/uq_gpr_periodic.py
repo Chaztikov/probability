@@ -200,12 +200,14 @@ for i in range(num_iters):
   optimizer.apply_gradients(zip(grads, trainable_variables))
   lls_[i] = loss
 
-print('Trained parameters:')
-print('amplitude: {}'.format(amplitude_var._value().numpy()))
-print('length_scale: {}'.format(length_scale_var._value().numpy()))
-print('period_var: {}'.format(period_var._value().numpy()))
-print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
+def print_trained_parameters():
+    print('Trained parameters:')
+    print('amplitude: {}'.format(amplitude_var._value().numpy()))
+    print('length_scale: {}'.format(length_scale_var._value().numpy()))
+    print('period_var: {}'.format(period_var._value().numpy()))
+    print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
 
+print_trained_parameters()
 
 # Plot the loss evolution
 plt.figure(figsize=(12, 4))
@@ -229,7 +231,7 @@ USE MODEL
 
 # predictive_index_points_ = np.linspace(-1.2, 1.2, 200, dtype=np.float64)
 
-predictive_index_points_ = np.array(times, dtype=np.float64)[:,:,0]
+predictive_index_points_ = np.array(times[:,0], dtype=np.float64)
 
 
 # Reshape to [200, 1] -- 1 is the dimensionality of the feature space.
@@ -271,5 +273,5 @@ plt.ylabel("Observation space")
 plt.savefig('gpm_out.png')
 plt.show()
 
-print(observation_index_points_)
-print(observations_)
+
+print_trained_parameters()
