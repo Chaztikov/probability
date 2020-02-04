@@ -24,7 +24,7 @@ params = {'amplitude': 21.553632877877284,
 
 
 kernel_type='ExpSinSquared'
-ii0,dii,iif=0,2,2650
+ii0,dii,iif=0,10,2650
 nt_max = np.floor((iif-ii0)/dii).astype(int)
 print(nt_max)
 NUM_TRAINING_POINTS = 0
@@ -61,7 +61,7 @@ def generate_1d_data(num_training_points, observation_noise_variance):
                                     scale=np.sqrt(observation_noise_variance),
                                     size=(num_training_points)))
   return index_points_, observations_
-  
+
 # Generate training data with a known noise level (we'll later try to recover
 # this value from the data).
 
@@ -101,16 +101,12 @@ kernel = tfk.ExpSinSquared(amplitude=tf.constant(params['amplitude'],dtype=tf.fl
 #     amplitude=tf.Variable(1., dtype=np.float64, name='amplitude'),
 #     length_scale=tf.Variable(1., dtype=np.float64, name='length_scale'))
 
-nsamples = 10
-# Index points should be a collection (100, here) of feature vectors. In this
-# example, we're using 1-d vectors, so we just need to reshape the output from
-# np.linspace, to give a shape of (100, 1).
-index_points_ = np.random.uniform(0, 1., (nsamples, 1))
-# index_points_ = index_points_.astype(tf.float32)
-
-
-X = tf.cast(index_points_,tf.float32)
-gpm = tfd.GaussianProcess(kernel,index_points=X)
+# nsamples = 10
+nsamples = observation_index_points_.shape[0]
+# observation_index_points_ = np.random.uniform(-1, 1., (nsamples, 1))
+X = tf.cast(observation_index_points_,tf.float32)
+gpm = tfd.GaussianProcess(kernel,index_points=X,
+                          mean_fn=None,observation_noise_variance=0.1)
 
 gpm.sample(nsamples)
 Y = gpm.sample(nsamples)
@@ -118,5 +114,5 @@ Y = gpm.sample(nsamples)
 Y = tf.cast(Y,tf.float32)
 
 print(X.shape, Y.shape)
-plt.plot(X, Y,'.')
+plt.plot(X, Y,'.',ms=1)
 plt.show()
