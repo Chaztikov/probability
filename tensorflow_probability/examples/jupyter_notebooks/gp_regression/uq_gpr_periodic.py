@@ -18,7 +18,7 @@ plt.rcParams['grid.color'] = '#666666'
 
 # tf = 
 kernel_type='ExpSinSquared'
-ii0,dii,iif=0,1,2650
+ii0,dii,iif=0,10,2650
 nt_max = np.floor((iif-ii0)/dii).astype(int)
 print(nt_max)
 NUM_TRAINING_POINTS = 0
@@ -62,6 +62,9 @@ def generate_1d_data(num_training_points, observation_noise_variance):
 def generate_data(NUM_TRAINING_POINTS=0, value1='',value2='',data_dir = '', fname=''):   
     if(NUM_TRAINING_POINTS>1):
         observation_index_points_, observations_ = generate_1d_data(num_training_points=NUM_TRAINING_POINTS, observation_noise_variance=.1)
+        t0 =observation_index_points_.min()
+        tf = observation_index_points_.max()
+        times = observation_index_points_
     else:
         data = np.loadtxt(data_dir+'/'+fname)
         
@@ -73,16 +76,16 @@ def generate_data(NUM_TRAINING_POINTS=0, value1='',value2='',data_dir = '', fnam
 
         nt = observations_.shape[0]
 
-        observation_index_points_ =  np.loadtxt(data_dir+'/'+'time_data.txt')
+        times =  np.loadtxt(data_dir+'/'+'time_data.txt')
         
-        t0 =observation_index_points_.min()
-        tf = observation_index_points_.max()
+        t0 = times.min()
+        tf = times.max()
         observation_index_points_ = np.linspace(t0,tf,nt)
         observation_index_points_ = np.atleast_2d(observation_index_points_).T
         
-    return observation_index_points_, observations_
+    return observation_index_points_, observations_,times
     
-observation_index_points_, observations_ = generate_data(NUM_TRAINING_POINTS,label1,label2,data_dir,fname)
+observation_index_points_, observations_,times = generate_data(NUM_TRAINING_POINTS,label1,label2,data_dir,fname)
 
 
 # print(observations_.shape, observation_index_points_.shape)
@@ -197,40 +200,76 @@ for i in range(num_iters):
   optimizer.apply_gradients(zip(grads, trainable_variables))
   lls_[i] = loss
 
-# print('Trained parameters:')
-# print('amplitude: {}'.format(amplitude_var._value().numpy()))
-# print('length_scale: {}'.format(length_scale_var._value().numpy()))
-# print('period_var: {}'.format(period_var._value().numpy()))
-# print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
+print('Trained parameters:')
+print('amplitude: {}'.format(amplitude_var._value().numpy()))
+print('length_scale: {}'.format(length_scale_var._value().numpy()))
+print('period_var: {}'.format(period_var._value().numpy()))
+print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
 
 
-# # Plot the loss evolution
-# plt.figure(figsize=(12, 4))
-# plt.plot(lls_)
-# plt.grid()
-# plt.title('Log marginal likelihood')
-# plt.xlabel("Training iteration")
-# plt.ylabel("Log marginal likelihood")
-# plt.savefig('out.png')
+# Plot the loss evolution
+plt.figure(figsize=(12, 4))
+plt.plot(lls_)
+plt.grid()
+plt.title('Log marginal likelihood')
+plt.xlabel("Training iteration")
+plt.ylabel("Log marginal likelihood")
+plt.savefig('lml_out.png')
+
+
+
+'''
+USE MODEL
+'''
+
+
+# Having trained the model, we'd like to sample from the posterior conditioned
+# on observations. We'd like the samples to be at points other than the training
+# inputs.
+
+# predictive_index_points_ = np.linspace(-1.2, 1.2, 200, dtype=np.float64)
+
+predictive_index_points_ = np.array(times, dtype=np.float64)[:,:,0]
+
+
+# Reshape to [200, 1] -- 1 is the dimensionality of the feature space.
+predictive_index_points_ = predictive_index_points_[..., np.newaxis]
+
+optimized_kernel = tfk.ExpSinSquared(amplitude_var, length_scale_var, period_var)
+gprm = tfd.GaussianProcessRegressionModel(
+    kernel=optimized_kernel,
+    index_points=predictive_index_points_,
+    observation_index_points=observation_index_points_,
+    observations=observations_,
+    observation_noise_variance=observation_noise_variance_var,
+    predictive_noise_variance=0.)
+
+# Create op to draw  50 independent samples, each of which is a *joint* draw
+# from the posterior at the predictive_index_points_. Since we have 200 input
+# locations as defined above, this posterior distribution over corresponding
+# function values is a 200-dimensional multivariate Gaussian distribution!
+num_samples = 100
+samples = gprm.sample(num_samples)
 
 
 
 
-# # Plot the true function, observations, and posterior samples.
-# plt.figure(figsize=(12, 4))
+# Plot the true function, observations, and posterior samples.
+plt.figure(figsize=(12, 4))
 # plt.plot(predictive_index_points_, sinusoid(predictive_index_points_),
 #          label='True fn')
-# plt.scatter(observation_index_points_[:, 0], observations_,
-#             label='Observations')
-# for i in range(num_samples):
-#   plt.plot(predictive_index_points_, samples[i, :], c='r', alpha=.1,
-#            label='Posterior Sample' if i == 0 else None)
-# leg = plt.legend(loc='upper right')
-# for lh in leg.legendHandles: 
-#     lh.set_alpha(1)
-# plt.xlabel(r"Index points ($\mathbb{R}^1$)")
-# plt.ylabel("Observation space")
-# plt.show()
+plt.scatter(observation_index_points_[:, 0], observations_,
+            label='Observations')
+for i in range(num_samples):
+  plt.plot(predictive_index_points_, samples[i, :], c='r', alpha=.1,
+           label='Posterior Sample' if i == 0 else None)
+leg = plt.legend(loc='upper right')
+for lh in leg.legendHandles: 
+    lh.set_alpha(1)
+plt.xlabel(r"Index points ($\mathbb{R}^1$)")
+plt.ylabel("Observation space")
+plt.savefig('gpm_out.png')
+plt.show()
 
 print(observation_index_points_)
 print(observations_)
