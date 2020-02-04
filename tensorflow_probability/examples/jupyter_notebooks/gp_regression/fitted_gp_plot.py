@@ -24,7 +24,7 @@ params = {'amplitude': 21.553632877877284,
 
 
 kernel_type='ExpSinSquared'
-ii0,dii,iif=0,10,2650
+ii0,dii,iif=0,1,2650
 nt_max = np.floor((iif-ii0)/dii).astype(int)
 print(nt_max)
 NUM_TRAINING_POINTS = 0

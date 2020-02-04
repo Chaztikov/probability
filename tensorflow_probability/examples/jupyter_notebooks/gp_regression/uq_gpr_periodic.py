@@ -18,7 +18,7 @@ plt.rcParams['grid.color'] = '#666666'
 
 # tf = 
 kernel_type='ExpSinSquared'
-ii0,dii,iif=0,2,2650
+ii0,dii,iif=0,1,2650
 nt_max = np.floor((iif-ii0)/dii).astype(int)
 print(nt_max)
 NUM_TRAINING_POINTS = 0
@@ -69,7 +69,7 @@ def generate_data(NUM_TRAINING_POINTS=0, value1='',value2='',data_dir = '', fnam
         head = np.array(head)
         iname = np.where(head==value1)[0]
         
-        observations_ = data[ii0:iif:dii, iname]
+        observations_ = data[ii0:iif:dii, iname][:,0]
 
         nt = observations_.shape[0]
 
@@ -84,6 +84,8 @@ def generate_data(NUM_TRAINING_POINTS=0, value1='',value2='',data_dir = '', fnam
     
 observation_index_points_, observations_ = generate_data(NUM_TRAINING_POINTS,label1,label2,data_dir,fname)
 
+
+# print(observations_.shape, observation_index_points_.shape)
 
 import tensorflow.compat.v2 as tf
 import tensorflow_probability as tfp
@@ -187,28 +189,48 @@ optimizer = tf.optimizers.Adam(learning_rate=.01)
 lls_ = np.zeros(num_iters, np.float64)
 for i in range(num_iters):
   with tf.GradientTape() as tape:
-    loss = -target_log_prob(amplitude_var, length_scale_var,period_var,
+    loss = -target_log_prob(amplitude_var, 
+                            length_scale_var,
+                            period_var,
                             observation_noise_variance_var)
   grads = tape.gradient(loss, trainable_variables)
   optimizer.apply_gradients(zip(grads, trainable_variables))
   lls_[i] = loss
 
-print('Trained parameters:')
-print('amplitude: {}'.format(amplitude_var._value().numpy()))
-print('length_scale: {}'.format(length_scale_var._value().numpy()))
-print('period_var: {}'.format(period_var._value().numpy()))
-print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
+# print('Trained parameters:')
+# print('amplitude: {}'.format(amplitude_var._value().numpy()))
+# print('length_scale: {}'.format(length_scale_var._value().numpy()))
+# print('period_var: {}'.format(period_var._value().numpy()))
+# print('observation_noise_variance: {}'.format(observation_noise_variance_var._value().numpy()))
 
 
-# Plot the loss evolution
-plt.figure(figsize=(12, 4))
-plt.plot(lls_)
-plt.grid()
-plt.title('Log marginal likelihood')
-plt.xlabel("Training iteration")
-plt.ylabel("Log marginal likelihood")
-plt.savefig('out.png')
+# # Plot the loss evolution
+# plt.figure(figsize=(12, 4))
+# plt.plot(lls_)
+# plt.grid()
+# plt.title('Log marginal likelihood')
+# plt.xlabel("Training iteration")
+# plt.ylabel("Log marginal likelihood")
+# plt.savefig('out.png')
 
+
+
+
+# # Plot the true function, observations, and posterior samples.
+# plt.figure(figsize=(12, 4))
+# plt.plot(predictive_index_points_, sinusoid(predictive_index_points_),
+#          label='True fn')
+# plt.scatter(observation_index_points_[:, 0], observations_,
+#             label='Observations')
+# for i in range(num_samples):
+#   plt.plot(predictive_index_points_, samples[i, :], c='r', alpha=.1,
+#            label='Posterior Sample' if i == 0 else None)
+# leg = plt.legend(loc='upper right')
+# for lh in leg.legendHandles: 
+#     lh.set_alpha(1)
+# plt.xlabel(r"Index points ($\mathbb{R}^1$)")
+# plt.ylabel("Observation space")
+# plt.show()
 
 print(observation_index_points_)
 print(observations_)
