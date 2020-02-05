@@ -53,7 +53,7 @@ FramesPerPulse = 60/BPM*FPS
 # Pulses = floor((size(Area,1)-InitialFrame)/FramesPerPulse);
 
 filenames = ['aortic__valve_piv_data.csv','pericar_valve_piv_data.csv']
-paramfilenames = ['aortic_params.txt','pericar_params.txt']
+paramfilenames = ['aortic___paramslists.txt','pericar__paramslists.txt']
 times = np.arange(0, 0.855, 0.000334)
 
 paramslist = []
