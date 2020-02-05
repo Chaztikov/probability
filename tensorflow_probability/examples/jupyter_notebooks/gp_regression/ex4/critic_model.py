@@ -50,7 +50,7 @@ paramslist = []
 header = ['amplitude','length_scale','observation_noise_variance']
 # paramslist.append(['amplitude','length_scale','observation_noise_variance'])
 
-for filename,pfilename in zip(filenames[:1],paramfilenames[:1]):
+for filename,pfilename in zip(filenames[:],paramfilenames[:]):
     paramslists = np.loadtxt('./save/'+pfilename)
 
     df = pd.read_csv('./save/'+filename)
@@ -58,7 +58,7 @@ for filename,pfilename in zip(filenames[:1],paramfilenames[:1]):
     times = np.atleast_2d(times).T
     
     
-    for val,params in zip(df.columns[1:2],paramslists):
+    for val,params in zip(df.columns[1:],paramslists):
         lls_ = np.loadtxt('./save/'+filename[:7]+'_'+val+'_loglikelihood.txt')
         
         amplitude_var, length_scale_var, observation_noise_variance_var = params
@@ -96,13 +96,13 @@ for filename,pfilename in zip(filenames[:1],paramfilenames[:1]):
         plt.scatter(
                     np.mod(input_points_[:, 0] * dt, tau),
                     observations_,
-                    c='b',
-                    marker='o',
+                    c='k',
+                    marker='x',
                     label='Observations')
         for i in range(num_predictive_samples):
-            plt.scatter( np.mod(input_points_*dt, tau),
-                    samples[i, :],
-                    c='r', alpha=.2,marker='.',
+            plt.plot( np.mod(input_points_*dt, tau),
+                    samples[i, :],'-.',
+                    c='m', alpha=.05,
                     label='Posterior Sample' if i == 0 else None)
         leg = plt.legend(loc='upper right')
         for lh in leg.legendHandles:
@@ -111,7 +111,7 @@ for filename,pfilename in zip(filenames[:1],paramfilenames[:1]):
         # plt.xlim(0,dt*2)
         plt.xlabel(r"Index points ($\mathbb{R}^1$)")
         plt.ylabel("Observation space")
-        plt.savefig('./save/'+val+'_gpm_critic.png')
+        plt.savefig('./save/'+filename[:7]+'_'+val+'_gpm_periodic.png')
         plt.show()
 
 
